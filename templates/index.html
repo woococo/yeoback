@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta name="yeobaek-release" content="web-1.0.4">
+  <meta name="yeobaek-release" content="web-1.0.5">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fffdf8">
@@ -10,11 +10,47 @@
   <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/GmarketSans.css" type="text/css">
 
   <style>
+    /* Gmarket Sans - direct WOFF2 loading
+       Avoids an extra remote CSS dependency. */
+    @font-face{
+      font-family:"Gmarket Sans";
+      font-style:normal;
+      font-weight:300;
+      font-display:swap;
+      src:url("https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/GmarketSansLight.woff2?v=1.0.5") format("woff2");
+    }
+    @font-face{
+      font-family:"Gmarket Sans";
+      font-style:normal;
+      font-weight:500;
+      font-display:swap;
+      src:url("https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/GmarketSansMedium.woff2?v=1.0.5") format("woff2");
+    }
+    @font-face{
+      font-family:"Gmarket Sans";
+      font-style:normal;
+      font-weight:700;
+      font-display:swap;
+      src:url("https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/GmarketSansBold.woff2?v=1.0.5") format("woff2");
+    }
+
+    html,body,
+    button,input,select,textarea,
+    div,span,p,a,strong,b,small,label,
+    h1,h2,h3,h4,h5,h6,
+    section,article,header,footer,nav,
+    li,ul,ol{
+      font-family:"Gmarket Sans","Noto Sans KR","Apple SD Gothic Neo",-apple-system,BlinkMacSystemFont,sans-serif !important;
+    }
+
+    /* Keep coordinate/debug-like text monospaced where intended. */
+    .mapinfocoords{
+      font-family:ui-monospace,SFMono-Regular,Consolas,monospace !important;
+    }
+
     :root{
       --paper:#fffdf8; --ink:#25232a; --muted:#77717e; --line:#2f2c34;
       --purple:#9b7be7; --purple-soft:#eee6ff; --pink:#ff9db2; --pink-soft:#ffe7ed;
@@ -566,16 +602,21 @@
       line-height:1.36;
     }
 
-    body.font-ready{font-family:"Gmarket Sans","Noto Sans KR",sans-serif}
-
   </style>
 
+
   <script>
-    if(document.fonts && document.fonts.load){
-      document.fonts.load('500 16px "Gmarket Sans"').then(function(){
-        document.body && document.body.classList.add('font-ready');
-      }).catch(function(){});
-    }
+    window.addEventListener('DOMContentLoaded', function(){
+      if(!document.fonts || !document.fonts.load) return;
+      Promise.all([
+        document.fonts.load('500 16px "Gmarket Sans"'),
+        document.fonts.load('700 16px "Gmarket Sans"')
+      ]).then(function(){
+        document.body.dataset.gmarketFont = document.fonts.check('500 16px "Gmarket Sans"') ? 'loaded' : 'fallback';
+      }).catch(function(){
+        document.body.dataset.gmarketFont = 'fallback';
+      });
+    });
   </script>
 
 </head>
@@ -764,7 +805,7 @@
       </div>
 
       <div class="footercredit">
-        관광정보 한국관광공사 · 날씨 기상청 · 대중교통 카카오맵 · 지도 OpenStreetMap<br><span style="opacity:.45;font-size:7px">web 1.0.4</span>
+        관광정보 한국관광공사 · 날씨 기상청 · 대중교통 카카오맵 · 지도 OpenStreetMap<br><span style="opacity:.45;font-size:7px">web 1.0.5</span>
       </div>
     </section>
   

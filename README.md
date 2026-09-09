@@ -1,4 +1,4 @@
-# Yeobaek (旅Back) — Vercel Web Edition 1.0.4
+# Yeobaek (旅Back) — Vercel Web Edition 1.0.5
 
 여백은 여행 중 생긴 빈 시간과 날씨·혼잡·이동 같은 변수를 분석해
 현재 위치에서 다음 일정까지 안전하게 활용할 관광지와 코스를 추천합니다.
@@ -83,13 +83,17 @@ instead of relying only on `/api/health`.
 
 ## Fonts
 
-Version 1.0.4 applies `Gmarket Sans` as the **primary font across the entire app**.
+Version 1.0.5 hard-applies `Gmarket Sans` across the application.
 
-- `Gmarket Sans` — all UI, body, buttons, recommendation cards, AI chat, headings
-- `Noto Sans KR` — fallback only
+Instead of loading a remote Gmarket CSS file, the page declares the three
+Gmarket Sans WOFF2 weights directly:
 
-The webfont is loaded from:
+- 300 Light
+- 500 Medium
+- 700 Bold
 
-`https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/GmarketSans.css`
+All normal UI elements explicitly prefer `Gmarket Sans` with `!important`.
+`Noto Sans KR` remains only as a fallback.
 
-No font binary files are bundled in this project.
+The font binaries are still not bundled in this repository; they are loaded
+from the jsDelivr CDN.
