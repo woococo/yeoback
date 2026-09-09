@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta name="yeobaek-release" content="web-1.0.3">
+  <meta name="yeobaek-release" content="web-1.0.4">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fffdf8">
@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/subsets/GmarketSans-dynamic-subset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/GmarketSans.css" type="text/css">
 
   <style>
     :root{
@@ -23,13 +23,18 @@
     }
     *{box-sizing:border-box}
     html,body{margin:0;max-width:100%;overflow-x:hidden}
+    html,body{
+      font-family:"Gmarket Sans","Noto Sans KR","Apple SD Gothic Neo",-apple-system,BlinkMacSystemFont,sans-serif;
+    }
     body{
       color:var(--ink); background:#edeae2;
-      font-family:"Noto Sans KR","Apple SD Gothic Neo",-apple-system,BlinkMacSystemFont,sans-serif;
+      font-weight:500;
       -webkit-font-smoothing:antialiased;
       text-rendering:optimizeLegibility;
     }
-    button,input,select,textarea{font:inherit}
+    button,input,select,textarea{
+      font-family:"Gmarket Sans","Noto Sans KR",sans-serif;
+    }
     button{cursor:pointer}
     button:active{transform:translate(1px,1px)}
     .app{
@@ -509,9 +514,9 @@
     }
 
 
-    /* Free webfont system
-       body / UI : Noto Sans KR
-       headline / brand accent : Gmarket Sans */
+    /* Global free webfont system
+       Primary : Gmarket Sans
+       Fallback: Noto Sans KR */
     .brand strong,
     .hero h1,
     .hero h2,
@@ -548,7 +553,8 @@
     .openingnote,
     .aimsg,
     .aiinputrow input{
-      font-family:"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+      font-family:"Gmarket Sans","Noto Sans KR",sans-serif;
+      font-weight:500;
     }
 
     .hero h1,.hero h2,.aihero h2{
@@ -560,7 +566,18 @@
       line-height:1.36;
     }
 
+    body.font-ready{font-family:"Gmarket Sans","Noto Sans KR",sans-serif}
+
   </style>
+
+  <script>
+    if(document.fonts && document.fonts.load){
+      document.fonts.load('500 16px "Gmarket Sans"').then(function(){
+        document.body && document.body.classList.add('font-ready');
+      }).catch(function(){});
+    }
+  </script>
+
 </head>
 
 <body>
@@ -747,7 +764,7 @@
       </div>
 
       <div class="footercredit">
-        관광정보 한국관광공사 · 날씨 기상청 · 대중교통 카카오맵 · 지도 OpenStreetMap<br><span style="opacity:.45;font-size:7px">web 1.0.3</span>
+        관광정보 한국관광공사 · 날씨 기상청 · 대중교통 카카오맵 · 지도 OpenStreetMap<br><span style="opacity:.45;font-size:7px">web 1.0.4</span>
       </div>
     </section>
   

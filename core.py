@@ -21,11 +21,11 @@ except Exception:
 
 
 ROOT = Path(__file__).resolve().parent
-APP_VERSION = "vercel-1.0.3"
+APP_VERSION = "vercel-1.0.4"
 HTTP_TIMEOUT = 12
 
 CONTACT = os.getenv("YEOBAEK_CONTACT", "").strip()
-APP_USER_AGENT = os.getenv("YEOBAEK_USER_AGENT", "Yeobaek-Vercel/1.0.3").strip()
+APP_USER_AGENT = os.getenv("YEOBAEK_USER_AGENT", "Yeobaek-Vercel/1.0.4").strip()
 if CONTACT:
     APP_USER_AGENT += f" ({CONTACT})"
 

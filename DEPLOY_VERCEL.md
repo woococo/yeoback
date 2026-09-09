@@ -76,7 +76,7 @@ A healthy deployment returns JSON containing:
 {
   "ok": true,
   "service": "yeobaek",
-  "version": "vercel-1.0.3",
+  "version": "vercel-1.0.4",
   "deployment": "vercel"
 }
 ```
