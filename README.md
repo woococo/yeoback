@@ -1,4 +1,4 @@
-# Yeobaek (旅Back) — Vercel Web Edition 1.0.0
+# Yeobaek (旅Back) — Vercel Web Edition 1.0.1
 
 여백은 여행 중 생긴 빈 시간과 날씨·혼잡·이동 같은 변수를 분석해
 현재 위치에서 다음 일정까지 안전하게 활용할 관광지와 코스를 추천합니다.
@@ -67,3 +67,15 @@ KAKAO_REST_API_KEY
 GEMINI_API_KEY
 GEMINI_MODEL=gemini-3.6-flash
 ```
+
+
+## API diagnostics
+
+Use:
+
+`/api/service-check`
+
+instead of relying only on `/api/health`.
+
+`health` = environment value exists  
+`service-check` = provider accepted the key and returned a real response

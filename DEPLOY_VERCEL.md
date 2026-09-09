@@ -76,7 +76,7 @@ A healthy deployment returns JSON containing:
 {
   "ok": true,
   "service": "yeobaek",
-  "version": "vercel-1.0.0",
+  "version": "vercel-1.0.1",
   "deployment": "vercel"
 }
 ```
@@ -119,3 +119,30 @@ Or use Vercel CLI:
 ```bash
 vercel dev
 ```
+
+
+## Real API connection check
+
+`/api/health` only tells you whether environment-variable values exist.
+
+After redeploying, open:
+
+```text
+https://YOUR-PROJECT.vercel.app/api/service-check
+```
+
+This performs real test calls for:
+- TourAPI
+- KMA weather
+- Kakao transit
+
+and reports Gemini configuration without spending an AI generation request.
+
+The response never exposes the secret values. It only shows secret length and
+a short SHA-256 fingerprint so you can confirm that Production is using the
+same value you intended to save.
+
+If TourAPI reports `SERVICE_KEY_IS_NOT_REGISTERED_ERROR`, check the Vercel
+`KTO_SERVICE_KEY` value. Paste the key only, without quotes and without
+`KTO_SERVICE_KEY=`. Version 1.0.1 also automatically strips those common
+copy/paste mistakes and tries both Encoding and Decoding request forms.

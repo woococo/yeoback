@@ -21,11 +21,11 @@ except Exception:
 
 
 ROOT = Path(__file__).resolve().parent
-APP_VERSION = "vercel-1.0.0"
+APP_VERSION = "vercel-1.0.1"
 HTTP_TIMEOUT = 12
 
 CONTACT = os.getenv("YEOBAEK_CONTACT", "").strip()
-APP_USER_AGENT = os.getenv("YEOBAEK_USER_AGENT", "Yeobaek-Vercel/1.0.0").strip()
+APP_USER_AGENT = os.getenv("YEOBAEK_USER_AGENT", "Yeobaek-Vercel/1.0.1").strip()
 if CONTACT:
     APP_USER_AGENT += f" ({CONTACT})"
 
@@ -53,8 +53,33 @@ def load_local_config():
 
 
 
+def clean_env_secret(value, name=None):
+    """Normalize values pasted into Vercel Environment Variables.
+
+    Accepts:
+      raw-value
+      "raw-value"
+      'raw-value'
+      NAME=raw-value
+
+    This never logs or returns the secret to the browser.
+    """
+    text=str(value or "").replace("\r","").strip()
+    if not text:
+        return ""
+
+    if name and text.startswith(name+"="):
+        text=text[len(name)+1:].strip()
+
+    # A copied .env line may be quoted.
+    if len(text)>=2 and text[0]==text[-1] and text[0] in {"'", '"'}:
+        text=text[1:-1].strip()
+
+    return text
+
+
 def normalize_service_key(value):
-    text = str(value or "").strip()
+    text=clean_env_secret(value)
     if not text or "여기에" in text or "PASTE" in text.upper():
         return ""
     # Keep one decoded canonical form; urllib.urlencode performs one encoding.
@@ -65,24 +90,32 @@ def normalize_service_key(value):
 
 
 _LOCAL_CONFIG = load_local_config()
-KTO_SERVICE_KEY_RAW = str(
+KTO_SERVICE_KEY_RAW = clean_env_secret(
     os.getenv("KTO_SERVICE_KEY")
     or _LOCAL_CONFIG.get("kto_service_key")
-    or ""
-).strip()
+    or "",
+    "KTO_SERVICE_KEY",
+)
 KTO_SERVICE_KEY = normalize_service_key(KTO_SERVICE_KEY_RAW)
+KTO_KEY_MODE = clean_env_secret(
+    os.getenv("KTO_KEY_MODE")
+    or _LOCAL_CONFIG.get("kto_key_mode")
+    or "auto",
+    "KTO_KEY_MODE",
+)
 KTO_BASE_URL = "https://apis.data.go.kr/B551011/KorService2"
 KTO_MOBILE_OS = "ETC"
 KTO_MOBILE_APP = "Yeobaek"
 
 # 기상청 단기예보 조회서비스. 공공데이터포털의 일반 인증키는 계정 단위로
 # 동일하게 보이는 경우가 많아서 별도 키가 없으면 KTO 키를 재사용해 시도한다.
-KMA_SERVICE_KEY_RAW = str(
+KMA_SERVICE_KEY_RAW = clean_env_secret(
     os.getenv("KMA_SERVICE_KEY")
     or _LOCAL_CONFIG.get("kma_service_key")
     or KTO_SERVICE_KEY_RAW
-    or ""
-).strip()
+    or "",
+    "KMA_SERVICE_KEY",
+)
 KMA_SERVICE_KEY = normalize_service_key(KMA_SERVICE_KEY_RAW)
 KMA_KEY_MODE = str(
     os.getenv("KMA_KEY_MODE")
@@ -92,19 +125,21 @@ KMA_KEY_MODE = str(
 KMA_BASE_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0"
 KMA_BASE_URL_HTTP = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0"
 
-KAKAO_REST_API_KEY = str(
+KAKAO_REST_API_KEY = clean_env_secret(
     os.getenv("KAKAO_REST_API_KEY")
     or _LOCAL_CONFIG.get("kakao_rest_api_key")
-    or ""
-).strip()
+    or "",
+    "KAKAO_REST_API_KEY",
+)
 KAKAO_TRANSIT_URL = "https://dapi.kakao.com/v2/routing/publictraffic"
 
 # Free-tier conversational AI (Google Gemini Developer API).
-GEMINI_API_KEY = str(
+GEMINI_API_KEY = clean_env_secret(
     os.getenv("GEMINI_API_KEY")
     or _LOCAL_CONFIG.get("gemini_api_key")
-    or ""
-).strip()
+    or "",
+    "GEMINI_API_KEY",
+)
 _GEMINI_MODEL_CONFIGURED = str(
     os.getenv("GEMINI_MODEL")
     or _LOCAL_CONFIG.get("gemini_model")
@@ -936,40 +971,145 @@ KTO_CATEGORY_MAP = {
 }
 
 
+_kto_mode_lock = threading.Lock()
+_kto_mode_resolved = False
+
+
+def _kto_request_url(endpoint, params, mode=None):
+    mode=(mode or KTO_KEY_MODE or "auto").strip()
+    others={
+        "MobileOS":KTO_MOBILE_OS,
+        "MobileApp":KTO_MOBILE_APP,
+        "_type":"json",
+    }
+    others.update(params or {})
+
+    if mode=="encoded_https":
+        raw=KTO_SERVICE_KEY_RAW
+        # If a decoding key was supplied, encode it exactly once.
+        if "%" not in raw:
+            raw=quote(KTO_SERVICE_KEY,safe="")
+        query="serviceKey="+raw
+        if others:
+            query+="&"+urlencode(others,doseq=True)
+        return f"{KTO_BASE_URL}/{endpoint}?{query}"
+
+    full={"serviceKey":KTO_SERVICE_KEY}
+    full.update(others)
+    return f"{KTO_BASE_URL}/{endpoint}?"+urlencode(full,doseq=True)
+
+
+def _kto_decode_response(raw):
+    text=raw.decode("utf-8","replace")
+    try:
+        data=json.loads(text)
+    except Exception as e:
+        auth=re.search(
+            r"<(?:returnAuthMsg|errMsg)>(.*?)</(?:returnAuthMsg|errMsg)>",
+            text,re.I|re.S
+        )
+        code=re.search(
+            r"<(?:returnReasonCode|resultCode)>(.*?)</(?:returnReasonCode|resultCode)>",
+            text,re.I|re.S
+        )
+        if auth:
+            msg=html_lib.unescape(
+                re.sub(r"<[^>]+>","",auth.group(1))
+            ).strip()
+            raise RuntimeError(
+                "TourAPI 인증 오류: "+msg+
+                (f" ({code.group(1).strip()})" if code else "")
+            ) from e
+        raise RuntimeError(
+            "TourAPI 응답을 읽지 못했어. 인증키와 활용신청 상태를 확인해줘."
+        ) from e
+
+    # Gateway auth errors may arrive outside response/header.
+    gateway=data.get("OpenAPI_ServiceResponse") if isinstance(data,dict) else None
+    if isinstance(gateway,dict):
+        cmm=gateway.get("cmmMsgHeader") or {}
+        msg=cmm.get("returnAuthMsg") or cmm.get("errMsg") or "인증 오류"
+        raise RuntimeError(f"TourAPI 인증 오류: {msg}")
+
+    response=data.get("response") if isinstance(data,dict) else None
+    if not isinstance(response,dict):
+        raise RuntimeError("TourAPI 응답 형식이 예상과 달라.")
+
+    header=response.get("header") or {}
+    result_code=str(header.get("resultCode") or "")
+    if result_code and result_code!="0000":
+        raise RuntimeError(
+            f"TourAPI 오류: {header.get('resultMsg') or '요청 실패'} ({result_code})"
+        )
+    return data
+
+
+def kto_probe(endpoint, params, mode):
+    url=_kto_request_url(endpoint,params,mode)
+    raw,_=fetch_bytes(url,params=None,timeout=HTTP_TIMEOUT)
+    return _kto_decode_response(raw)
+
+
+def resolve_kto_key_mode(probe_params=None):
+    global KTO_KEY_MODE,_kto_mode_resolved
+
+    if not KTO_SERVICE_KEY:
+        raise RuntimeError("한국관광공사 TourAPI 인증키가 설정되지 않았어.")
+
+    with _kto_mode_lock:
+        if _kto_mode_resolved and KTO_KEY_MODE!="auto":
+            return KTO_KEY_MODE
+
+        params=probe_params or {
+            "mapX":"126.9780",
+            "mapY":"37.5665",
+            "radius":"1000",
+            "arrange":"E",
+            "numOfRows":"1",
+            "pageNo":"1",
+        }
+
+        modes=[]
+        for mode in (KTO_KEY_MODE,"decoded_https","encoded_https"):
+            if mode and mode!="auto" and mode not in modes:
+                modes.append(mode)
+        for mode in ("decoded_https","encoded_https"):
+            if mode not in modes:
+                modes.append(mode)
+
+        errors=[]
+        for mode in modes:
+            try:
+                data=kto_probe("locationBasedList2",params,mode)
+                KTO_KEY_MODE=mode
+                _kto_mode_resolved=True
+                return mode
+            except Exception as e:
+                errors.append(f"{mode}: {e}")
+
+        raise RuntimeError(
+            "TourAPI 연결 실패: "+" | ".join(errors[:2])
+        )
+
+
 def kto_fetch_json(endpoint, params, ttl=600):
     if not KTO_SERVICE_KEY:
         raise RuntimeError("한국관광공사 TourAPI 인증키가 아직 설정되지 않았어.")
-    full = {
-        "serviceKey": KTO_SERVICE_KEY,
-        "MobileOS": KTO_MOBILE_OS,
-        "MobileApp": KTO_MOBILE_APP,
-        "_type": "json",
-    }
-    full.update(params or {})
-    key = "kto:" + endpoint + ":" + urlencode(sorted((str(k), str(v)) for k, v in full.items() if k != "serviceKey"))
-    if (v := cache_get(key)) is not None:
-        return v
-    kto_limiter.wait()
-    raw, _ = fetch_bytes(f"{KTO_BASE_URL}/{endpoint}", params=full, timeout=HTTP_TIMEOUT)
-    text = raw.decode("utf-8", "replace")
-    try:
-        data = json.loads(text)
-    except Exception as e:
-        auth = re.search(r"<(?:returnAuthMsg|errMsg)>(.*?)</(?:returnAuthMsg|errMsg)>", text, re.I | re.S)
-        code = re.search(r"<(?:returnReasonCode|resultCode)>(.*?)</(?:returnReasonCode|resultCode)>", text, re.I | re.S)
-        if auth:
-            msg = html_lib.unescape(re.sub(r"<[^>]+>", "", auth.group(1))).strip()
-            raise RuntimeError(f"TourAPI 인증/호출 오류: {msg}" + (f" ({code.group(1).strip()})" if code else "")) from e
-        raise RuntimeError("TourAPI가 JSON이 아닌 응답을 반환했어. 인증키와 활용신청 상태를 확인해줘.") from e
 
-    response = data.get("response") if isinstance(data, dict) else None
-    if not isinstance(response, dict):
-        raise RuntimeError("TourAPI 응답 형식이 예상과 달라.")
-    header = response.get("header") or {}
-    result_code = str(header.get("resultCode") or "")
-    if result_code and result_code != "0000":
-        raise RuntimeError(f"TourAPI 오류: {header.get('resultMsg') or '요청 실패'} ({result_code})")
-    cache_set(key, data, ttl)
+    if KTO_KEY_MODE=="auto" or not _kto_mode_resolved:
+        resolve_kto_key_mode()
+
+    key="kto:"+endpoint+":"+urlencode(
+        sorted((str(k),str(v)) for k,v in (params or {}).items())
+    )+":"+KTO_KEY_MODE
+    if (v:=cache_get(key)) is not None:
+        return v
+
+    kto_limiter.wait()
+    url=_kto_request_url(endpoint,params,KTO_KEY_MODE)
+    raw,_=fetch_bytes(url,params=None,timeout=HTTP_TIMEOUT)
+    data=_kto_decode_response(raw)
+    cache_set(key,data,ttl)
     return data
 
 
@@ -2742,7 +2882,7 @@ def build_recommendations(body):
         else:
             reason="관광정보를 잠시 불러오지 못해 다음 약속에 늦지 않는 안전한 동선으로 안내할게."
             if poi_error:
-                reason += f" ({poi_error[:180]})"
+                sys.stderr.write(f"[Yeobaek TourAPI] {poi_error}\n")
 
         fb=safe_fallback(
             origin_point,dest_point,remaining,meal_reserve,mode,mode_label,reason

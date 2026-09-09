@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import hashlib
 from urllib.parse import urlparse
 
 from flask import Flask, jsonify, render_template, request
@@ -41,9 +42,102 @@ def health():
         "version": core.APP_VERSION,
         "deployment": "vercel",
         "tourapi_configured": bool(core.KTO_SERVICE_KEY),
+        "note": "configured=true means an environment value exists; use /api/service-check for real connectivity.",
         "kma_configured": bool(core.KMA_SERVICE_KEY),
         "kakao_transit_configured": bool(core.KAKAO_REST_API_KEY),
         "ai_configured": bool(core.GEMINI_API_KEY),
+    })
+
+
+
+def _secret_summary(value):
+    text=str(value or "")
+    if not text:
+        return {"present":False,"length":0,"fingerprint":None}
+    return {
+        "present":True,
+        "length":len(text),
+        "fingerprint":hashlib.sha256(text.encode("utf-8")).hexdigest()[:10],
+    }
+
+
+@app.route("/api/service-check", methods=["GET"])
+def service_check():
+    checks={}
+
+    # TourAPI - real call
+    try:
+        mode=core.resolve_kto_key_mode()
+        data=core.kto_fetch_json(
+            "locationBasedList2",
+            {
+                "mapX":"126.9780",
+                "mapY":"37.5665",
+                "radius":"1000",
+                "arrange":"E",
+                "numOfRows":"1",
+                "pageNo":"1",
+            },
+            ttl=1,
+        )
+        checks["tourapi"]={
+            "ok":True,
+            "mode":mode,
+            "items":len(core.kto_items(data)),
+            "key":_secret_summary(core.KTO_SERVICE_KEY_RAW),
+        }
+    except Exception as e:
+        checks["tourapi"]={
+            "ok":False,
+            "reason":str(e)[:240],
+            "key":_secret_summary(core.KTO_SERVICE_KEY_RAW),
+        }
+
+    # KMA - actual weather pipeline
+    try:
+        w=core.weather_at(37.5665,126.9780,120)
+        checks["weather"]={
+            "ok":bool(w and w.get("ok")),
+            "summary":(w or {}).get("summary"),
+            "reason":None if (w and w.get("ok")) else (w or {}).get("reason"),
+            "key":_secret_summary(core.KMA_SERVICE_KEY_RAW),
+        }
+    except Exception as e:
+        checks["weather"]={
+            "ok":False,
+            "reason":str(e)[:240],
+            "key":_secret_summary(core.KMA_SERVICE_KEY_RAW),
+        }
+
+    # Kakao - real route
+    try:
+        leg=core.kakao_transit_leg(
+            {"lat":37.5546788,"lon":126.9706069,"name":"서울역"},
+            {"lat":37.5716077,"lon":126.9769604,"name":"광화문"},
+        )
+        checks["kakao"]={
+            "ok":bool(leg and leg.get("minutes")),
+            "minutes":(leg or {}).get("minutes"),
+            "key":_secret_summary(core.KAKAO_REST_API_KEY),
+        }
+    except Exception as e:
+        checks["kakao"]={
+            "ok":False,
+            "reason":str(e)[:240],
+            "key":_secret_summary(core.KAKAO_REST_API_KEY),
+        }
+
+    checks["ai"]={
+        "ok":bool(core.GEMINI_API_KEY),
+        "model":core.GEMINI_MODEL,
+        "key":_secret_summary(core.GEMINI_API_KEY),
+        "note":"AI는 이 점검에서 사용량을 소모하지 않도록 실제 생성 호출은 하지 않아.",
+    }
+
+    return json_response({
+        "ok":all(v.get("ok") for k,v in checks.items() if k!="ai") and checks["ai"]["ok"],
+        "version":core.APP_VERSION,
+        "checks":checks,
     })
 
 
