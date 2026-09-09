@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta name="yeobaek-release" content="web-1.0.1">
+  <meta name="yeobaek-release" content="web-1.0.2">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fffdf8">
   <title>여백(旅Back)</title>
 
   <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -20,10 +23,11 @@
     html,body{margin:0;max-width:100%;overflow-x:hidden}
     body{
       color:var(--ink); background:#edeae2;
-      font-family:"Arial Rounded MT Bold","Apple SD Gothic Neo",Pretendard,-apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif;
+      font-family:"Noto Sans KR","Apple SD Gothic Neo",-apple-system,BlinkMacSystemFont,sans-serif;
       -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
     }
-    button,input{font:inherit}
+    button,input,select,textarea{font:inherit}
     button{cursor:pointer}
     button:active{transform:translate(1px,1px)}
     .app{
@@ -503,6 +507,39 @@
     }
 
 
+    /* Free webfont system
+       body / UI : Noto Sans KR
+       title / sticker accent : Jua */
+    .brand strong,
+    .hero h1,
+    .hero h2,
+    .aihero h2,
+    .rectitle,
+    .itineraryhead strong,
+    .kicker,
+    .aikicker,
+    .mark,
+    .aiopen strong{
+      font-family:"Jua","Noto Sans KR",sans-serif;
+      font-weight:400;
+      letter-spacing:-.035em;
+    }
+
+    .brand small,
+    .hero p,
+    .aihero p,
+    .recmeta,
+    .recreason,
+    .routemini,
+    .placedesc,
+    .stopdesc,
+    .tourdetailrow,
+    .openingnote,
+    .aimsg,
+    .aiinputrow input{
+      font-family:"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+    }
+
   </style>
 </head>
 
@@ -690,7 +727,7 @@
       </div>
 
       <div class="footercredit">
-        관광정보 한국관광공사 · 날씨 기상청 · 대중교통 카카오맵 · 지도 OpenStreetMap<br><span style="opacity:.45;font-size:7px">web 1.0.1</span>
+        관광정보 한국관광공사 · 날씨 기상청 · 대중교통 카카오맵 · 지도 OpenStreetMap<br><span style="opacity:.45;font-size:7px">web 1.0.2</span>
       </div>
     </section>
   

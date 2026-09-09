@@ -1,4 +1,4 @@
-# Yeobaek (旅Back) — Vercel Web Edition 1.0.1
+# Yeobaek (旅Back) — Vercel Web Edition 1.0.2
 
 여백은 여행 중 생긴 빈 시간과 날씨·혼잡·이동 같은 변수를 분석해
 현재 위치에서 다음 일정까지 안전하게 활용할 관광지와 코스를 추천합니다.
@@ -79,3 +79,13 @@ instead of relying only on `/api/health`.
 
 `health` = environment value exists  
 `service-check` = provider accepted the key and returned a real response
+
+
+## Fonts
+
+This release uses free Google Fonts without bundling font files:
+
+- `Noto Sans KR` — body text, buttons, details, chat
+- `Jua` — logo, headings, recommendation titles, scrapbook-style accents
+
+Fonts are loaded from Google Fonts in the browser.
