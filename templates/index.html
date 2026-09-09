@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta name="yeobaek-release" content="web-1.0.2">
+  <meta name="yeobaek-release" content="web-1.0.3">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fffdf8">
@@ -10,7 +10,9 @@
   <link id="leafletCss" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/GmarketSans/subsets/GmarketSans-dynamic-subset.css">
 
   <style>
     :root{
@@ -509,20 +511,29 @@
 
     /* Free webfont system
        body / UI : Noto Sans KR
-       title / sticker accent : Jua */
+       headline / brand accent : Gmarket Sans */
     .brand strong,
     .hero h1,
     .hero h2,
     .aihero h2,
     .rectitle,
     .itineraryhead strong,
+    .aiopen strong{
+      font-family:"Gmarket Sans","Noto Sans KR",sans-serif;
+      font-weight:700;
+      letter-spacing:-.045em;
+    }
+
     .kicker,
     .aikicker,
     .mark,
-    .aiopen strong{
-      font-family:"Jua","Noto Sans KR",sans-serif;
-      font-weight:400;
-      letter-spacing:-.035em;
+    .badge,
+    .statuschip,
+    .sourcebadge,
+    .moretoggle{
+      font-family:"Gmarket Sans","Noto Sans KR",sans-serif;
+      font-weight:500;
+      letter-spacing:-.025em;
     }
 
     .brand small,
@@ -538,6 +549,15 @@
     .aimsg,
     .aiinputrow input{
       font-family:"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+    }
+
+    .hero h1,.hero h2,.aihero h2{
+      word-break:keep-all;
+      line-height:1.24;
+    }
+    .rectitle,.itineraryhead strong{
+      word-break:keep-all;
+      line-height:1.36;
     }
 
   </style>
@@ -727,7 +747,7 @@
       </div>
 
       <div class="footercredit">
-        관광정보 한국관광공사 · 날씨 기상청 · 대중교통 카카오맵 · 지도 OpenStreetMap<br><span style="opacity:.45;font-size:7px">web 1.0.2</span>
+        관광정보 한국관광공사 · 날씨 기상청 · 대중교통 카카오맵 · 지도 OpenStreetMap<br><span style="opacity:.45;font-size:7px">web 1.0.3</span>
       </div>
     </section>
   
